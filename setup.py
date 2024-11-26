@@ -10,14 +10,14 @@ except FileNotFoundError:
     long_description = short_description
 
 setup(
-    name="pyreact-agent",  # Replace with your package name
-    version="0.1.0",  # Replace with your version
+    name="pyreact_agent",  # Replace with your package name
+    version="0.1.1",  # Replace with your version
     author="Cody Maughan",  # Replace with your name
     author_email="codyamaughan@gmail.com",  # Replace with your email
     description=short_description,  # Replace with a short description
     long_description=long_description,
     long_description_content_type="text/markdown",  # Optional (if README is in Markdown)
-    url="",  # Replace with your GitHub or project URL
+    url="https://github.com/CodyAMaughan/pyreact-agent/",  # Replace with your GitHub or project URL
     packages=find_packages(),  # Automatically find packages in your directory
     classifiers=[
         "Programming Language :: Python :: 3",

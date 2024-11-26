@@ -3,7 +3,7 @@ from pyreact_agent.tools.custom import get_now
 from pyreact_agent.tools.docker_env import PythonDockerToolSet
 from pyreact_agent.clients.ollama import OllamaClient
 from pyreact_agent.agent import ReActAgent
-from pyreact_agent.docker_env.utils import start_python_docker_environment, build_docker_image
+from pyreact_agent.docker_env.utils import run_docker_image, build_docker_image
 
 
 # Main program
@@ -12,8 +12,8 @@ if __name__ == "__main__":
     build_docker_image(image_name='my-python-env')
 
     # Start docker container environment (if it doesn't already exist, otherwise will throw an error)
-    start_python_docker_environment(image_name='my-python-env',
-                                    container_name='my-python-container')
+    run_docker_image(image_name='my-python-env',
+                     container_name='my-python-container')
 
     # Create tools object
     available_tools = [get_now]

@@ -8,8 +8,11 @@ from pyreact_agent.docker_env.utils import get_docker_container
 # Given a python docker container, get a toolset associated with manipulating files in that container
 class PythonDockerToolSet(ToolSet):
 
-    def __init__(self, container_name: str):
-        self.container = get_docker_container(container_name=container_name)
+    def __init__(self, container_name: str, docker_url: str = None):
+        self.container = get_docker_container(
+            container_name=container_name,
+            docker_url=docker_url
+        )
 
     @tool
     def write_content_to_file(self, filename: str, content: str) -> str:

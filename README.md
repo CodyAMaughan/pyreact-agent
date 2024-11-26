@@ -24,7 +24,7 @@ This package also includes tools that an LLM can use for running Bash or Python 
 To install PyReact-Agent, run:
 
 ```bash
-pip install pyreact-agent
+pip install pyreact_agent
 ```
 
 ## Usage
@@ -48,7 +48,7 @@ docker_utils.build_docker_image(image_name="my-python-env")
 To start a Docker container and run Python code inside:
 
 ```python
-docker_utils.start_python_docker_environment(
+docker_utils.run_docker_image(
     image_name="my-python-env",
     container_name="my-python-container",
     local_bound_dir="/path/to/your/local/dir"

@@ -3,108 +3,98 @@ import os
 import time
 
 container_cache = dict()
+image_cache = dict()
 
 
-def get_docker_container(container_name: str = "my-python-container"):
-    # Initialize Docker client
-    client = docker.from_env()
+def get_docker_client(docker_url: str = None):
+    """
+    Initialize a Docker client. If running inside a Docker container,
+    ensure the Docker socket is available.
+
+    :param docker_url: Docker daemon URL. Defaults to None, which uses the local Docker environment.
+    :type docker_url: str, optional
+    :return: Docker client object.
+    :rtype: docker.DockerClient
+    """
+    if docker_url:
+        return docker.DockerClient(base_url=docker_url)
+    return docker.from_env()
+
+
+def get_docker_container(container_name: str = "my-python-container", docker_url: str = None):
+    """
+    Get a Docker container object by name or ID.
+
+    :param container_name: Name or ID of the Docker container.
+    :type container_name: str
+    :param docker_url: Docker daemon URL. Defaults to None for local Docker environment.
+    :type docker_url: str, optional
+    :return: Docker container object.
+    :rtype: docker.models.containers.Container
+    """
+    client = get_docker_client(docker_url)
 
     if container_name in container_cache:
         return container_cache[container_name]
-    else:
-        # List all running containers and find your container by name or ID
-        containers = client.containers.list()
 
-        # Find the container
-        container = None
-        for c in containers:
-            if container_name in c.name:
-                container = c
-                break
-
-        if not container:
-            raise ValueError(f"Container not found {container_name}")
-        else:
-            container_cache[container_name] = container
-            return container
+    try:
+        # Retrieve the container
+        container = client.containers.get(container_name)
+        container_cache[container_name] = container
+        return container
+    except docker.errors.NotFound:
+        raise ValueError(f"Container '{container_name}' not found.")
 
 
-# Cache for Docker images to avoid redundant lookups
-image_cache = {}
-
-
-def get_docker_image(image_name: str = "my-python-env"):
+def get_docker_image(image_name: str = "my-python-env", docker_url: str = None):
     """
     Get a Docker image object by name or ID.
 
-    :param image_name: Name or ID of the Docker image to retrieve.
+    :param image_name: Name or ID of the Docker image.
     :type image_name: str
+    :param docker_url: Docker daemon URL. Defaults to None for local Docker environment.
+    :type docker_url: str, optional
     :return: Docker image object.
     :rtype: docker.models.images.Image
-    :raises ValueError: If the image is not found.
     """
-    # Initialize Docker client
-    client = docker.from_env()
+    client = get_docker_client(docker_url)
 
-    # Check cache first
     if image_name in image_cache:
         return image_cache[image_name]
 
     try:
         # Retrieve the image
         image = client.images.get(image_name)
-
-        # Cache the image for future calls
         image_cache[image_name] = image
         return image
     except docker.errors.ImageNotFound:
-        raise ValueError(f"Docker image not found: {image_name}")
+        raise ValueError(f"Docker image '{image_name}' not found.")
 
 
-def build_docker_image(dockerfile_path: str = None,
-                       image_name: str = "my-python-env",
-                       no_duplicate_build: bool = True) -> None:
+def build_docker_image(dockerfile_path: str = None, image_name: str = "my-python-env", docker_url: str = None):
     """
     Build a Docker image from a Dockerfile.
 
-    :param dockerfile_path: Path to the Dockerfile. If None, defaults to the directory where this script is located.
+    :param dockerfile_path: Path to the Dockerfile. Defaults to the directory where this script is located.
     :type dockerfile_path: str, optional
     :param image_name: Name to give the Docker image.
     :type image_name: str
-    :param no_duplicate_build: Whether to skip building the Docker image if it already exists.
-    :type no_duplicate_build: bool
+    :param docker_url: Docker daemon URL. Defaults to None for local Docker environment.
+    :type docker_url: str, optional
     :return: None
     :rtype: None
     """
-    # Use the current directory as default Dockerfile location
     if dockerfile_path is None:
         dockerfile_path = os.path.dirname(os.path.abspath(__file__))
 
-    # Initialize Docker client
-    client = docker.from_env()
-
-    if no_duplicate_build:
-        try:
-            image = get_docker_image(image_name=image_name)
-            if image:
-                raise NameError(f"Image {image_name} already exists")
-        except ValueError:
-            pass  # Image doesn't exist, good to go
+    client = get_docker_client(docker_url)
 
     print(f"Building Docker image '{image_name}' from Dockerfile at '{dockerfile_path}'...")
     try:
-        # Build the image
-        image, logs = client.images.build(
-            path=dockerfile_path,
-            tag=image_name,
-            rm=True
-        )
-
-        # Output the logs from the build process
+        image, logs = client.images.build(path=dockerfile_path, tag=image_name, rm=True)
         for log in logs:
             if "stream" in log:
                 print(log["stream"].strip())
-
         print(f"Successfully built Docker image '{image_name}'.")
     except docker.errors.BuildError as build_err:
         print(f"Error during Docker image build: {build_err}")
@@ -112,10 +102,11 @@ def build_docker_image(dockerfile_path: str = None,
         print(f"Docker API error: {api_err}")
 
 
-def start_python_docker_environment(
+def run_docker_image(
         image_name: str,
         local_bound_dir: str = None,
-        container_name: str = None
+        container_name: str = None,
+        docker_url: str = None
 ) -> None:
     """
     Start a Docker container with the specified image, bind a local directory,
@@ -127,11 +118,13 @@ def start_python_docker_environment(
     :type local_bound_dir: str, optional
     :param container_name: Name to assign to the Docker container. If None, Docker will assign a random name.
     :type container_name: str, optional
+    :param docker_url: Docker daemon URL. Defaults to None for local Docker environment.
+    :type docker_url: str, optional
     :return: None
     :rtype: None
     """
     # Initialize Docker client
-    client = docker.from_env()
+    client = get_docker_client(docker_url)
 
     if local_bound_dir is None:
         local_bound_dir = f"{os.getcwd()}/app"
@@ -162,24 +155,20 @@ def start_python_docker_environment(
     print("STDERR:", stderr.decode())
 
 
-def start_container_by_name(container_name: str) -> None:
+def start_container_by_name(container_name: str, docker_url: str = None):
     """
     Start a stopped Docker container by its name.
 
     :param container_name: The name of the container to start.
     :type container_name: str
+    :param docker_url: Docker daemon URL. Defaults to None for local Docker environment.
+    :type docker_url: str, optional
     :return: None
     :rtype: None
-    :raises ValueError: If the container is not found or cannot be started.
     """
-    # Initialize Docker client
-    client = docker.from_env()
-
+    client = get_docker_client(docker_url)
     try:
-        # Retrieve the container
         container = client.containers.get(container_name)
-
-        # Start the container
         container.start()
         print(f"Container '{container_name}' started successfully.")
     except docker.errors.NotFound:
@@ -188,24 +177,20 @@ def start_container_by_name(container_name: str) -> None:
         raise ValueError(f"Failed to start container '{container_name}': {api_err}")
 
 
-def stop_container_by_name(container_name: str) -> None:
+def stop_container_by_name(container_name: str, docker_url: str = None):
     """
     Stop a running Docker container by its name.
 
     :param container_name: The name of the container to stop.
     :type container_name: str
+    :param docker_url: Docker daemon URL. Defaults to None for local Docker environment.
+    :type docker_url: str, optional
     :return: None
     :rtype: None
-    :raises ValueError: If the container is not found or cannot be stopped.
     """
-    # Initialize Docker client
-    client = docker.from_env()
-
+    client = get_docker_client(docker_url)
     try:
-        # Retrieve the container
         container = client.containers.get(container_name)
-
-        # Stop the container
         container.stop()
         print(f"Container '{container_name}' stopped successfully.")
     except docker.errors.NotFound:

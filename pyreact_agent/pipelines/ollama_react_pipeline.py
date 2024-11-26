@@ -5,7 +5,7 @@ date: 2024-11-25
 version: 1.0
 license: MIT
 description: A pipeline for running a simple ReAct agent with tools pyreact_agent-agent library.
-requirements: pyreact
+requirements: pyreact_agent
 """
 
 
@@ -26,6 +26,7 @@ class Pipeline:
         CONTAINER_NAME: str
         OLLAMA_BASE_URL: str
         OLLAMA_MODEL_NAME: str
+        DOCKER_URL: str
 
     def __init__(self):
         # Optionally, you can set the id and name of the pipeline.
@@ -42,8 +43,9 @@ class Pipeline:
         self.valves = self.Valves(
             **{
                 "CONTAINER_NAME": os.getenv("CONTAINER_NAME", "my-python-container"),
-                "OLLAMA_BASE_URL": os.getenv("OLLAMA_BASE_URL", "http://192.168.86.23:11434"),
-                "OLLAMA_MODEL_NAME": os.getenv("OLLAMA_MODEL_NAME", "qwen2.5-coder:32b"),
+                "OLLAMA_BASE_URL": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+                "OLLAMA_MODEL_NAME": os.getenv("OLLAMA_MODEL_NAME", "llama3"),
+                "DOCKER_URL": os.getenv("DOCKER_URL", "unix:///var/run/docker.sock"),
             }
         )
 
@@ -83,6 +85,28 @@ class Pipeline:
         try:
             # for message in self.agent.reason_and_act(user_message):
             #     pass
-            return "This is a test..."
+            return (f"This is a test...\n\n"
+                    f"=========================="
+                    f"'user_message': \n{user_message}\n\n"
+                    f"=========================="
+                    f"'model_id': \n{model_id}\n\n"
+                    f"=========================="
+                    f"'user_message': \n{messages}\n\n"
+                    f"=========================="
+                    f"'user_message': \n{body}\n\n"
+                    f"==========================")
         except Exception as e:
             return f"Error: {e}"
+
+
+# if __name__ == "__main__":
+#     import asyncio
+#     pipeline = Pipeline()
+#     asyncio.run(pipeline.on_startup())
+#     test_response = pipeline.pipe(
+#         user_message='Test Message',
+#         model_id='test',
+#         messages=[{'user': 'Test Message'}],
+#         body={'user': {'name': 'Test User', 'id': 'test_id'}}
+#     )
+#     asyncio.run(pipeline.on_shutdown())
