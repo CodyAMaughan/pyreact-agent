@@ -137,23 +137,6 @@ def run_docker_image(
         name=container_name  # Specify the container name
     )
 
-    # Wait a bit to ensure the container is fully started
-    time.sleep(5)
-
-    # Write Python code to a file inside the container
-    code = """
-    print("Hello, World!")
-    """
-    container.exec_run(f"echo '{code}' > /app/test_script.py")
-
-    # Execute the script and capture output
-    exec_command = "source venv/bin/activate && python /app/test_script.py"
-    stdout, stderr = container.exec_run(exec_command)
-
-    # Print captured outputs
-    print("STDOUT:", stdout.decode())
-    print("STDERR:", stderr.decode())
-
 
 def start_container_by_name(container_name: str, docker_url: str = None):
     """

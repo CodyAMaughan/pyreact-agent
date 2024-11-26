@@ -42,7 +42,7 @@ class Pipeline:
 
         self.valves = self.Valves(
             **{
-                "CONTAINER_NAME": os.getenv("CONTAINER_NAME", "my-python-container"),
+                "CONTAINER_NAME": os.getenv("CONTAINER_NAME", "pyreact-agent-container"),
                 "OLLAMA_BASE_URL": os.getenv("OLLAMA_BASE_URL", "http://192.168.86.23:11434"),
                 "OLLAMA_MODEL_NAME": os.getenv("OLLAMA_MODEL_NAME", "qwen2.5-coder:32b"),
                 "DOCKER_URL": os.getenv("DOCKER_URL", "unix:///var/run/docker.sock"),

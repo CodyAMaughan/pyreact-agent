@@ -31,4 +31,4 @@ USER myuser
 RUN virtualenv venv
 
 # Set the default command to bash (for interactive use)
-CMD ["bash"]
+CMD ["tail", "-f", "/dev/null"]
