@@ -41,6 +41,7 @@ class ReActAgent:
         """
         Main loop of the ReAct agent.
         """
+        # TODO: Refactor this to accept a list of messages (potentially optionally) to get chat history
         # Setup system prompt
         self.memory.append(self._get_system_message())
 

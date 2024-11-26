@@ -43,8 +43,8 @@ class Pipeline:
         self.valves = self.Valves(
             **{
                 "CONTAINER_NAME": os.getenv("CONTAINER_NAME", "my-python-container"),
-                "OLLAMA_BASE_URL": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
-                "OLLAMA_MODEL_NAME": os.getenv("OLLAMA_MODEL_NAME", "llama3"),
+                "OLLAMA_BASE_URL": os.getenv("OLLAMA_BASE_URL", "http://192.168.86.23:11434"),
+                "OLLAMA_MODEL_NAME": os.getenv("OLLAMA_MODEL_NAME", "qwen2.5-coder:32b"),
                 "DOCKER_URL": os.getenv("DOCKER_URL", "unix:///var/run/docker.sock"),
             }
         )
@@ -71,6 +71,7 @@ class Pipeline:
         self, user_message: str, model_id: str, messages: List[dict], body: dict,
         __event_emitter__=None
     ) -> Union[str, Generator, Iterator]:
+        stream = body['stream']
         # This is where you can add your custom pipelines like RAG.
         print(f"pipe:{__name__}")
         if __event_emitter__ is None:
@@ -83,20 +84,39 @@ class Pipeline:
             print("######################################")
 
         try:
-            # for message in self.agent.reason_and_act(user_message):
-            #     pass
-            return (f"This is a test...\n\n"
-                    f"=========================="
-                    f"'user_message': \n{user_message}\n\n"
-                    f"=========================="
-                    f"'model_id': \n{model_id}\n\n"
-                    f"=========================="
-                    f"'user_message': \n{messages}\n\n"
-                    f"=========================="
-                    f"'user_message': \n{body}\n\n"
-                    f"==========================")
+            these_messages = []
+            # TODO: Refactor agent.py to handle message history within the agent,
+            #  then refactor this to pass agent history
+            chat_history_message = '\n\n'.join(
+                [f'{message["role"]}: \n\n{message["content"]}\n\n' for message in messages]
+            )
+            for message in self.agent.reason_and_act(chat_history_message):
+                if message.role not in ['system', 'user']:
+                    if stream:
+                        yield f"Role: {message.role}\n\n{message.content}\n\n"
+                    else:
+                        these_messages.append(message)
+            if len(these_messages) == 0:
+                if stream:
+                    return
+                else:
+                    yield f"Error: No Messages Collected!"
+                    return
+            final_message = these_messages[-1].content
+            if 'Final Answer:' in final_message:
+                split_messages = final_message.split('Final Answer:')
+                if len(split_messages) == 1:
+                    yield split_messages[0]
+                    return
+                else:
+                    final_message = 'Final Answer:'.join(split_messages[1:])
+            if not stream:
+                yield final_message
+                return
         except Exception as e:
-            return f"Error: {e}"
+            print(f"Error: {e}")
+            yield f"Error: {e}"
+        return
 
 
 # if __name__ == "__main__":
@@ -104,9 +124,11 @@ class Pipeline:
 #     pipeline = Pipeline()
 #     asyncio.run(pipeline.on_startup())
 #     test_response = pipeline.pipe(
-#         user_message='Test Message',
+#         user_message='Hi, what are you supposed to do?',
 #         model_id='test',
-#         messages=[{'user': 'Test Message'}],
-#         body={'user': {'name': 'Test User', 'id': 'test_id'}}
+#         these_messages=[{'user': 'Hi, what are you supposed to do?'}],
+#         body={'stream': True, 'user': {'name': 'Test User', 'id': 'test_id'}}
 #     )
+#     for response in test_response:
+#         print(response)
 #     asyncio.run(pipeline.on_shutdown())
