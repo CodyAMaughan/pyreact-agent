@@ -5,7 +5,7 @@ date: 2024-11-25
 version: 1.0
 license: MIT
 description: A pipeline for running a simple ReAct agent with tools pyreact_agent-agent library.
-requirements: requests
+requirements: pyreact
 """
 
 
