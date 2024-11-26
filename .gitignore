@@ -108,5 +108,8 @@ pre_commit_requirements_txt_fixer.txt
 .spyderproject
 .spyproject
 
+# main.py
+main.py
+
 # PyCharm
 .idea/
