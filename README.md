@@ -31,7 +31,7 @@ pip install pyreact-agent
 
 ### End-To-End
 
-See example.py for a full end-to-end working example of how to create a 
+See example.py for a full end-to-end working example of how to create and run a ReAct agent with code writing tools.
 
 ### Building a Docker Image
 
